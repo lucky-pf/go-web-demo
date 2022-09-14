@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gomodule/redigo/redis"
 	"go-web-demo/src/datasource"
+	"go-web-demo/src/model"
 )
 
 func SetStr(str string) {
@@ -30,4 +31,12 @@ func GetStr() (name string) {
 	}
 	fmt.Println("get key: ", name)
 	return
+}
+
+func GetUserList() []model.User {
+	db := datasource.GetMySqlDB()
+	var users []model.User
+	db.Find(&users)
+	// fmt.Printf("user:%#v\n", users)
+	return users
 }
