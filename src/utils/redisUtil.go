@@ -1,21 +1,9 @@
 package utils
 
 import (
-	"fmt"
 	redigo "github.com/gomodule/redigo/redis"
 	"time"
 )
-
-var Pool *redigo.Pool
-
-func init() {
-	Pool = PoolInitRedis("127.0.0.1:6379", "")
-	if Pool != nil {
-		fmt.Println("REDIS连接成功...")
-	} else {
-		fmt.Println("REDIS连接失败...")
-	}
-}
 
 // PoolInitRedis redis pool
 func PoolInitRedis(server string, password string) *redigo.Pool {

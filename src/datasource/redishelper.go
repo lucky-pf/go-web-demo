@@ -7,15 +7,24 @@ import (
 	"time"
 )
 
-// POOL 全局变量 redis连接池
-var POOL *redigo.Pool
+// REDIGO_POOL 全局变量 redis连接池
+var REDIGO_POOL *redigo.Pool
 
 // 启动程序时，初始化连接池
 func init() {
-	server := "202.46.45.219:26379"
-	password := "sjdnjka2123"
+	REDIGO_POOL = initRedisPool()
+	if REDIGO_POOL != nil {
+		fmt.Println("REDIS连接池初始化完成...")
+	} else {
+		fmt.Println("REDIS连接池初始化失败...")
+	}
+}
+
+func initRedisPool() (pool *redigo.Pool) {
+	server := "127.0.0.1:6379"
+	password := ""
 	db := 0
-	POOL = &redigo.Pool{
+	pool = &redigo.Pool{
 		MaxIdle:     8,                 // 最大空闲连接数
 		MaxActive:   0,                 // 表示和数据库的最大连接，0表示没有限制
 		IdleTimeout: 240 * time.Second, // 最大空闲时间
@@ -24,9 +33,11 @@ func init() {
 			if err != nil {
 				return nil, err
 			}
-			if _, err := c.Do("AUTH", password); err != nil {
-				c.Close()
-				return nil, err
+			if password != "" {
+				if _, err := c.Do("AUTH", password); err != nil {
+					c.Close()
+					return nil, err
+				}
 			}
 			if _, err := c.Do("SELECT", db); err != nil {
 				c.Close()
@@ -35,11 +46,12 @@ func init() {
 			return c, nil
 		},
 	}
+	return
 }
 
 // SetExpTime 设置过期时间，key: key expTime: 过期时间，秒
 func SetExpTime(key string, expTime int) {
-	conn := POOL.Get()
+	conn := REDIGO_POOL.Get()
 	_, err := conn.Do("expire", key, expTime)
 	if err != nil {
 		fmt.Println("set expire error: ", err)
@@ -48,7 +60,7 @@ func SetExpTime(key string, expTime int) {
 }
 
 func LPush(key string, value ...string) {
-	c := POOL.Get()
+	c := REDIGO_POOL.Get()
 	defer c.Close()
 	_, err := c.Do("lpush", key, value)
 	if err != nil {
@@ -68,7 +80,7 @@ func LPush(key string, value ...string) {
 }*/
 
 func DelKey(key string) {
-	c := POOL.Get()
+	c := REDIGO_POOL.Get()
 	defer c.Close()
 	_, err := c.Do("del", key)
 	if err != nil {
@@ -78,7 +90,7 @@ func DelKey(key string) {
 }
 
 func LPushList(key string, values []string) {
-	c := POOL.Get()
+	c := REDIGO_POOL.Get()
 	defer c.Close()
 
 	for _, v := range values {
@@ -96,7 +108,7 @@ func LPushList(key string, values []string) {
 }
 
 func GetAllList(key string) (rs []string) {
-	c := POOL.Get()
+	c := REDIGO_POOL.Get()
 	defer c.Close()
 	values, err := redigo.Values(c.Do("lrange", key, 0, -1))
 	if err != nil {
@@ -113,7 +125,7 @@ func GetAllList(key string) (rs []string) {
 }
 
 func LPop(key string) string {
-	c := POOL.Get()
+	c := REDIGO_POOL.Get()
 	defer c.Close()
 	r, err := redigo.String(c.Do("lpop", key))
 	if err != nil {

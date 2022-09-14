@@ -36,6 +36,7 @@ func init() {
 	sqlDB.SetMaxOpenConns(100)
 	// 连接池最大允许的空闲连接数，如果没有sql任务需要执行的连接数大于20，超过的连接会被连接池关闭。
 	sqlDB.SetMaxIdleConns(20)
+	fmt.Println("MySql连接池初始化完成...")
 }
 
 // GetMySqlDB 获取gorm db对象
