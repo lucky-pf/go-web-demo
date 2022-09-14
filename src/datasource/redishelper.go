@@ -2,24 +2,25 @@ package datasource
 
 import (
 	"fmt"
-	"github.com/garyburd/redigo/redis"
+	// redigo "github.com/garyburd/redigo/redis"
+	redigo "github.com/gomodule/redigo/redis"
 	"time"
 )
 
 // POOL 全局变量 redis连接池
-var POOL *redis.Pool
+var POOL *redigo.Pool
 
 // 启动程序时，初始化连接池
 func init() {
 	server := "202.46.45.219:26379"
 	password := "sjdnjka2123"
 	db := 0
-	POOL = &redis.Pool{
+	POOL = &redigo.Pool{
 		MaxIdle:     8,                 // 最大空闲连接数
 		MaxActive:   0,                 // 表示和数据库的最大连接，0表示没有限制
 		IdleTimeout: 240 * time.Second, // 最大空闲时间
-		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", server)
+		Dial: func() (redigo.Conn, error) {
+			c, err := redigo.Dial("tcp", server)
 			if err != nil {
 				return nil, err
 			}
@@ -97,7 +98,7 @@ func LPushList(key string, values []string) {
 func GetAllList(key string) (rs []string) {
 	c := POOL.Get()
 	defer c.Close()
-	values, err := redis.Values(c.Do("lrange", key, 0, -1))
+	values, err := redigo.Values(c.Do("lrange", key, 0, -1))
 	if err != nil {
 		fmt.Println("ltrim error: ", err)
 		return
@@ -105,7 +106,7 @@ func GetAllList(key string) (rs []string) {
 	for _, v := range values {
 		// fmt.Printf("%s ", v.([]byte))
 		// rs = append(rs, v.(string))
-		strV, _ := redis.String(v, nil)
+		strV, _ := redigo.String(v, nil)
 		rs = append(rs, strV)
 	}
 	return
@@ -114,7 +115,7 @@ func GetAllList(key string) (rs []string) {
 func LPop(key string) string {
 	c := POOL.Get()
 	defer c.Close()
-	r, err := redis.String(c.Do("lpop", key))
+	r, err := redigo.String(c.Do("lpop", key))
 	if err != nil {
 		fmt.Println("lpush error: ", err)
 		return ""
