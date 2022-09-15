@@ -7,13 +7,13 @@ import (
 	"time"
 )
 
-// REDIGO_POOL 全局变量 redis连接池
-var REDIGO_POOL *redigo.Pool
+// RedisGoPool 全局变量 redis连接池
+var RedisGoPool *redigo.Pool
 
 // 启动程序时，初始化连接池
 func init() {
-	REDIGO_POOL = initRedisPool()
-	if REDIGO_POOL != nil {
+	RedisGoPool = initRedisPool()
+	if RedisGoPool != nil {
 		fmt.Println("REDIS连接池初始化完成...")
 	} else {
 		fmt.Println("REDIS连接池初始化失败...")
@@ -51,7 +51,8 @@ func initRedisPool() (pool *redigo.Pool) {
 
 // SetExpTime 设置过期时间，key: key expTime: 过期时间，秒
 func SetExpTime(key string, expTime int) {
-	conn := REDIGO_POOL.Get()
+	conn := RedisGoPool.Get()
+	defer conn.Close()
 	_, err := conn.Do("expire", key, expTime)
 	if err != nil {
 		fmt.Println("set expire error: ", err)
@@ -60,7 +61,7 @@ func SetExpTime(key string, expTime int) {
 }
 
 func LPush(key string, value ...string) {
-	c := REDIGO_POOL.Get()
+	c := RedisGoPool.Get()
 	defer c.Close()
 	_, err := c.Do("lpush", key, value)
 	if err != nil {
@@ -80,7 +81,7 @@ func LPush(key string, value ...string) {
 }*/
 
 func DelKey(key string) {
-	c := REDIGO_POOL.Get()
+	c := RedisGoPool.Get()
 	defer c.Close()
 	_, err := c.Do("del", key)
 	if err != nil {
@@ -90,9 +91,8 @@ func DelKey(key string) {
 }
 
 func LPushList(key string, values []string) {
-	c := REDIGO_POOL.Get()
+	c := RedisGoPool.Get()
 	defer c.Close()
-
 	for _, v := range values {
 		// 把命令写到输出缓冲区
 		c.Send("lpush", key, v)
@@ -108,7 +108,7 @@ func LPushList(key string, values []string) {
 }
 
 func GetAllList(key string) (rs []string) {
-	c := REDIGO_POOL.Get()
+	c := RedisGoPool.Get()
 	defer c.Close()
 	values, err := redigo.Values(c.Do("lrange", key, 0, -1))
 	if err != nil {
@@ -125,7 +125,7 @@ func GetAllList(key string) (rs []string) {
 }
 
 func LPop(key string) string {
-	c := REDIGO_POOL.Get()
+	c := RedisGoPool.Get()
 	defer c.Close()
 	r, err := redigo.String(c.Do("lpop", key))
 	if err != nil {
